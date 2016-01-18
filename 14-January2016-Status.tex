@@ -1,0 +1,183 @@
+\documentclass{llncs}
+
+
+
+
+\usepackage{amssymb,amsmath,latexsym,enumerate,hyperref,proof,ndj}
+
+
+
+
+\newcommand{\wkeval}{\Downarrow}
+
+\newcommand{\nfeval}{\stackrel{\tiny nf}{\Downarrow}}
+
+\newcommand{\expeval}{\stackrel{\tiny exp}{\Downarrow}}
+
+\newcommand{\diveeval}{\stackrel{\tiny dive}{\Downarrow}}
+
+\newcommand{\arity}[2]{\stackrel{\tt#1}{#2}}
+
+
+
+\title{Status as of  
+\today}
+ 
+\author {Joint work by Danya Berezun and Neil D. Jones}
+
+\institute{DIKU}
+
+\begin{document}
+
+
+
+
+%\setcounter{tocdepth}{3} \tableofcontents  \newpage
+
+\setcounter{tocdepth}{3}
+
+\maketitle
+
+\section{Game semantics re-examined}
+
+The starting point was the realisation  in 2015 that the game semantics for PCF can be thought of as a PCF interpreter. 
+
+The bottom line, for me at least, is the unexpected fact that it is possible to build a lambda calculus interpreter that uses NONE of the traditional machinery: 
+\bi
+\item $\beta$-reduction; or 
+\item environments binding variables to values; or 
+\item ``closures'' or  ``thunks''  for implementation.
+\ei
+Using the game semantics framework, all these effects can be achieved (for a closed $\lambda$-expression)  by means of back pointers along a single ``traversal'', whose length is of the order of the length of the expression's head reduction sequence. 
+
+This is visible in the original work on full abstraction for PCF by Hyland, Ong, Abramsky, McCusker {\em et al}
+\cite{DBLP:journals/iandc/HylandO00,abramskyMcCusker97,DBLP:conf/tacs/AbramskyMJ94}\ldots. The potential operational consequences of the approach are  now becoming clearer, and look very promising. Further, game semantics may give a new line of attack on an old topic: {\em semantics-directed compiler generation}
+\cite{DBLP:conf/cc/1980,DBLP:conf/cc/Schmidt80}.
+
+The following follows in particular a recent paper \cite{ong} by  Ong on normalisation of the simply typed $\lambda$-calculus (henceforth called $\Lambda^{st}$). It is assumed that every free variable in the input is a constructor, with a given {\em arity}, i.e., number of arguments.
+
+Let a {\em token} be any subexpression of $M$, the lambda expression being evaluated.
+A {\em traversal} is a sequence of occurrences of 
+tokens\footnote{A token may occur more than once, or not at all in s traversal.}. 
+In addition, some of the tokens may have {\em back pointers} to earlier positions in the current traversal. 
+
+In game semantics papers \cite{ong}\ldots, the denotation of a PCF expression is  a game strategy. When played, 
+this game results in a traversal.
+
+The result of normalisation as in \cite{ong} contains only tokens and back pointers, and no other  $\lambda$-syntax.
+
+
+
+\subsection{A first  idea: specialise the PCF game semantics}
+
+
+
+The traversal algorithm is defined by structural induction on the syntax of long form $\lambda$-expressions
+(see {cite{ong} for a definition). 
+A consequence: the algorithm can be {\em specialised} with respect to the sub-$\lambda$-expressions of 
+$M$.\footnote{Specialisation is also known as {\em partial evaluation}.}
+
+
+
+\subsection{Towards {\sc lll}, a low-level semantic language}
+
+
+
+A partial evaluator, given expression $M$ in $\Lambda^{st}$ or $\Lambda^{untyped}$, will precompute all parts of the traversal algorithm for $M$ that depend only on its syntax. It thus produces as output a residual program containing no lambda-syntax, but only operations to construct the traversal. Further, recursive calls in the traversal algorithm may be unfolded.
+
+Another way to say it: specialisation is used to {\em factor} the given traversal algorithm
+$ \mathit{ta} : \Lambda \to \mathit{Traversals}$ into two stages:
+$$
+ \mathit{ta} = \mathit{tgen}\, ; \lsem\ \rsem^\Lambda 
+ \mbox{\ where\  }  
+       \mathit{tgen}:\Lambda \to \mbox{\sc lll} 
+ \mbox{\ and\ }
+ \lsem\ \rsem^\Lambda : \mbox{\sc lll} \to \mathit{Traversals}
+$$
+
+\section{Traversals for $\Lambda^{st}$}
+
+\paragraph{Status:} \hfill
+
+\be
+\item We began by programming Ong's  traversal algorithm; and now have versions in both {\sc haskell} and {\sc scheme}. The {\sc haskell} version includes typing (done by Algorithm W, given user-defined types for free variables); conversion to eta-long form;  the traversal algorithm itself; and rconstruction of the esidual term.
+
+\item The {\sc scheme} version is (at the time of writing this note) nearly in form suitable for automatic specialisation. To specialise it, we plan to use the {\sc unmix} system (developed by Sergei Romanenko).
+
+\item We have implemented (by hand) an {\em {\sc lll}-generator}. This is a ``generating extension'', i.e., a program that, given an input $\lambda$-expression $M$, produces as output an {\sc lll}  program $p_M$  that, when run, will yield the traversals of $M$. Symbolically:
+$$\lsem M\rsem = \lsem \lsem p_M\rsem \rsem
+$$
+The output $p_M$ is currently produced in the form of a {\sc scheme}  program. (For implementation  reasons we regard {\sc lll} as a subset of {\sc scheme}.)
+
+
+\item In general the traversal of $M$ may be much larger than $M$ (by Statman's results it may be larger by a ``non-elementary'' amount!). 
+
+A generating extension, though,  may be constructed to have size that is only linearly larger than $M$, satisfying 
+$$|p_M| = O(|M|)$$
+
+This is achieved by annotating as ``dynamic'' all calls of the traversal algorithm to itself that do not progress from one subexpression of $M$ to a proper subexpression. The effect is that these calls are never unfolded while producing the generating extension.
+
+\ee
+
+
+\paragraph{To do:} 
+
+\be
+
+\item Extend the approach to programs with input data.
+
+
+\item Produce a generating extension automatically by partial evaluating a $\Lambda$-traverser,  using {\sc unmix}. 
+(For more details on generating extensions and related topics, see \cite{jgs93}.)
+
+\item Using {\sc unmix}, the programs produced by the generating extension are in {\sc scheme}. This has a practical advantage, that $p_M$ is directly executable (e.g., using {\sc racket}), but a disadvantage that $p_M$ in this form could be system-dependent. A next goal is to produce programs in the {\sc lll} language instead.
+
+\ee
+
+\section{Traversals for $\Lambda^{untyped}$}
+
+\be
+
+\item A traversal algorithm for {\em untyped} $\lambda$-expression $M$ has been implemented in {\sc haskell}. It is more complex than Ong's evaluator, using in all four back pointers. The net effect is that an arbitrary untyped $\lambda$-expression can be translated into {\sc lll}.
+
+\item This traversal algorithm is also defined by structural recursion on its input $\lambda$-expression's syntax.
+
+\item We do not yet have a {\sc scheme} version or a generating extension.
+
+\ee
+
+
+\section{Separating program from data in $\Lambda^{st}$ or $\Lambda^{untyped}$}
+
+(This is current work.) The model is to regard a computation of $\lambda$-expression $M$ on input $d$ as a game between the {\sc lll}-codes for $M$ and $d$. We have promising examples. 
+
+One is multiplication of Church numerals. An interesting fact: neither the multiplication program (the usual $\lambda$-calculus definition {\tt mul}) nor the data contain loops; but  {\tt mul} is compilable into an {\sc lll}-program with two nested loops that, when applied to Church numerals for  values of its two inputs,  computes their product.
+
+For this example (and presumably many more) the computation can be done entirely without back pointers.
+\vair
+
+\fl Current work is to design a {\em communicating} version of {\sc lll}, in which such program-data games can be naturally expressed. A promising lead is to apply traditional methods for compiling {\em remote function calls} in the {\sc lll} context.
+
+\section{Semantics-directed compiler generation}
+
+(Just speculation at the moment.)
+
+The idea is to specify the semantics of a subject programming language (e.g., call-by-value $\lambda$-calculus, imperative languages, etc.) by giving a mapping from source programs into {\sc lll}. A first example: express
+$$
+\lsem\ \rsem^\Lambda : \Lambda^{untyped} \to \mbox{\sc lll}
+$$ by compositional rules with no variable environments.
+
+
+
+\section{About the references} 
+
+The following contain several works not mentioned in this status report, but which seem likely to become relevant as this line of research is developed further.
+
+
+\bibliographystyle{plain}
+
+\bibliography{games}
+
+\nocite{*}
+
+\end{document}
