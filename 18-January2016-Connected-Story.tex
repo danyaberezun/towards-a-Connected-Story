@@ -1,0 +1,264 @@
+\documentclass{llncs}
+
+
+
+
+\usepackage{amssymb,amsmath,latexsym,enumerate,hyperref,proof}
+
+
+
+\newcommand{\lsem}{\mbox{$\lbrack\hspace{-0.3ex}\lbrack$}}
+\newcommand{\rsem}{\mbox{$\rbrack\hspace{-0.3ex}\rbrack$}}
+
+\newcommand{\fl}{\noindent}
+\newcommand{\hair}{\hspace{3mm}}
+\newcommand{\vair}{\vspace{3mm}}
+
+
+\newcommand{\wkeval}{\Downarrow}
+
+\newcommand{\nfeval}{\stackrel{\tiny nf}{\Downarrow}}
+
+\newcommand{\expeval}{\stackrel{\tiny exp}{\Downarrow}}
+
+\newcommand{\diveeval}{\stackrel{\tiny dive}{\Downarrow}}
+
+\newcommand{\arity}[2]{\stackrel{\tt#1}{#2}}
+
+
+\newcommand{\lexp}{$\lambda$-expression}
+\newcommand{\lc}{$\lambda$-calculus}
+\newcommand{\lopen}{\Lambda^o}
+\newcommand{\lclosed}{\Lambda^\bullet}
+\newcommand{\lnf}{\Lambda^{nf}}
+
+
+\title{Towards   a Connected Story \\
+\today}
+ 
+\author {Working notes by Daniil Berezun and Neil D. Jones}
+
+\institute{DIKU}
+
+\begin{document}
+
+
+
+%\setcounter{tocdepth}{3} \tableofcontents  \newpage
+
+\setcounter{tocdepth}{3}
+
+\maketitle
+
+
+
+\begin{abstract}
+This is a fast top-down story about our goals and progress to date. 
+The emphasis is on the big picture; and on putting ideas and goals into a more logical order than they have been thought out and expressed until now.
+\end{abstract}
+
+\section{Computability, compilation and optimisation reconsidered}
+
+Neil has long worked on computability theory, and foundations and practice for compilation and optimisation (see bibliography for some examples).
+The starting point for the current line of work was the realisation  in 2015 that the much-studied game semantics for PCF can be thought of as a PCF interpreter. 
+
+\subsection*{A try at a connected story}
+
+We assume prior knowledge of the \lc.
+
+By the Church-Turing thesis, the concept of computablility is an invariant, identical (up to variations in program input and output formats) over all formulations of computation. Much has been written on this, for example by Martin Davis.
+
+A general first-order data format: Let $\Sigma$ be a {\em signature}: a finite set of first-order constructors, each with a natural number as its {\em arity}. Let $T_\Sigma$ denote the set of all finite terms built from the constructors in 
+$\Sigma$.\footnote
+{In these notes we assume $\Sigma$ is fixed. Examples: the natural numbers with 
+$\Sigma^{nats} = \{zero, succ\}$ of arities $0,1$; and {\sc llsp/scheme} with $\Sigma^{lisp} = \{{\tt cons}\}\cup Atoms$ where {\tt cons} has arity $2$ and $Atoms$ is a  countable set of arity $0$ values  containing the empty list {\tt nil}.
+}
+
+\begin{enumerate}
+
+\item An $n$-ary (mathematical, partial) function  $f : T_\Sigma^n \rightharpoonup T_\Sigma$ is {\em computable} if and only if there is a program that computes 
+it.
+More concretely, assume we are given  a Turing-complete programming language $L$, e.g., as in 
+\cite{JGS93}.\footnote
+{Each program $p$ has its own input/output arity, with 0,1 or more inputs and a single output. 
+Inputs and outputs will all be  values in $T_\Sigma$. The result of running arity-$n$ program $p$ 
+on inputs $d_1,\ldots,d_n\in T_\Sigma$ is written as $\lsem p\rsem\, d_1\,\ldots\,d_n$. This is either an output value  in $T_\Sigma$, or $\bot$ indicating ``undefined'' if the run does not terminate.
+}
+By definition $f$ is computable iff $f = \lsem p\rsem^L$ for some $L$-program. 
+\vair 
+
+
+
+\item $\Lambda$	   is the usual untyped \lc. Let $\lopen$ and $\lclosed$ respectively denote the $\Lambda$-subsets of open and closed {\lexp}s. Let $\lnf$ denote the set of {\lexp}s in $\beta$-normal form.
+
+A {\em normaliser} is a partial function $\mathit{norm} : \Lambda \rightharpoonup \Lambda$ such that 
+$\mathit{norm} (M) =$ the normal form of $M$ if it exists, and is undefined otherwise. 
+\vair
+
+\item {\em The \lc\  as a programming language.} Given signature $\Sigma$, define
+\vair
+
+
+\begin{itemize}
+\item $\mathit{Value} = T_\Sigma$
+\vair
+
+\item $\Lambda^{value}$ = the set of Church encodings of values  $v \in \mathit{Value}$.
+\end{itemize}
+\vair
+
+Let $\mathit{sugar} : \Lambda^{value} \to \mathit{Value}$ and $\mathit{desugar} : \mathit{Value} \to \Lambda^{value}$ be the  expected isomorphisms between the set of values and their Church encodings.
+Then by definition for any {\lexp} $M$, number $n \geq 0$ and $d, d_1\ldots d_n \in T_\Sigma$, 
+$$
+\lsem M\rsem^\lambda \, d_1\,\ldots\,d_n = d \mbox{\ \  iff\ } \ M\, M_1\,\ldots \,M_n \ \Rightarrow^*\  N
+$$
+where $M_i = \mathit{desugar} (d_i)$ for $i=1,\ldots,n$ and $N = \mathit{desugar}(d)$.
+Remark:  in Church encodings, the constructors of $\Sigma$ will appear as free variables in $M$.
+\vair 
+
+\item Define a {\em traversal} of {\lexp} $M$ to be a sequence of subexpressions of $M$. Some nodes in the sequence may have {\em back pointers} (justifiers) to earlier positions in the sequence. 
+There may be several sorts of back pointers.
+\vair
+
+\item {\bf Theorem} lambda expression normalisation may be carried out by an algorithm that, given $M$, produces a set of traversals of $M$. 
+\smallskip
+
+ 
+ There are several variations of this result, whose roots stem back to the beginning of game semantics in the 1990s. Constructions and correctness proofs appear in 
+ \cite{DBLP:conf/tacs/AbramskyMJ94,lmcs09,blumong2008,DBLP:journals/iandc/HylandO00}
+ and the recent \cite{ong2015}. The traversals used there assume that $M$ is simply typed, and most assume $M$ been converted to $\eta$-long form. (CHECK!)
+\smallskip
+
+Technically: these algorithms begin with the traversal set $\{M\}$, with no back pointer.
+The existing traversal set is  repeatedly extended until it cannot be further extended.
+(If $M$ has no normal form the algorithms don't terminate.)
+
+Extension is based on the syntax of the ending expression $N$ in a traversal.
+Often this simply adds a subexpression of $N$, together with suitable back pointers.
+When a free $M$ variable $y$ is encountered, one successor is added for each subexpression to which $y$ is applied, and none if it has no arguments. 
+\vair 
+
+\item The bottom line (our emphasis): a {\lexp} $M$ can be evaluated by an algorithm that manipulates a sequence of finite states (subexpressions of $M$) together with back pointers. There is {\em no need for $\beta$-reduction, environments, or ``closures''} to do the evaluation.
+\vair
+
+\item We have developed and implemented an algorithm to normalise {\em untyped} {\lexp}s, without the need for  long forms. The algorithm's  statement and correctness proof are still to be formalised. 
+
+The central correctness property is that  {\lexp} $M$ has a normal form iff the algorithm terminates; and that this normal form can be ``read out'' from the computed set of  traversals.
+\vair 
+ 
+
+\item An insight from a partial evaluation perspective: the normalisation algorithm can be {\em specialised} with respect to the input \lexp\ $M$. The resulting 
+{\em residual 
+program}\footnote{A  term from the partial evaluation literature.}
+is equivalent to the normaliser on input $M$; but contains no operations on subexpressions 
+of $M$.\footnote{More exactly: $M$ subexpressions are not decomposed, nor are their substructures examined, beyond testing whether two subexpressions are equal.
+}
+\vair
+
+\item Consequence: the actions of the normalisation algorithm  on $M$ can be performed by a very simple imperative program with
+\vair
+
+\begin{itemize}
+\item  Control points: their number is $O($the number of $M$ subexpressions$)$;  
+\vair
+
+\item Variables: their number is independent of $M$.
+\vair
+
+\item A data type for each variable.  Data types can be control points, or a list of such types.
+\end{itemize}
+\vair
+
+\item A stronger consequence: $\Lambda$ can be compiled into a ``low-level language'' 
+LLL.\footnote
+{Details are not needed now, but for concreteness: LLL has first-order functional programs, also known as recursion systems. Its data values include a finite set of symbols that we call {\em tokens}, and finite lists of values.
+% , and natural numbers
+Tokens include the constructors of signature $\Sigma$, as the corresponding  free variables in $M$.
+
+Operations include  list construction and deconstruction, CONS, and comparison of token values.
+%, and simple operations on natural numbers. 
+Control includes if-then-else and  tail recursive function calls.
+
+}
+The effect is to {\em compile} from {\lexp}s to LLL-programs. The compiler  function ${\cal C}\lsem\ \rsem : \Lambda \to \mbox{LLL-programs}$  in a sense preserves semantics: the result of compiling $M$ is an LLL-program that, when run, produces  the maximal traversal that would be obtained by normalising $M$.
+\vair
+
+We  use LLL as a compiler target  language that can further be used as input and output to  optimisers. We are also thinking to extended LLL to a language able to express semantics of various programming languages, the ultimate aim being a {\em semantics-directed compiler generator}.
+
+\vair 
+
+\item The compiler is {\em correct} iff for any {\lexp} $M$ we have
+$$
+\mathit{norm}(M) =_\alpha  \mathit{readout}(\lsem\ {\cal C}\lsem M \rsem \ \rsem^{LLL})
+$$
+where $\mathit{readout}$ extracts a {\lexp} from  a maximal traversal.
+\vair 
+
+\item The definition just given would allow, as an extreme case, that the compiler could reduce $M$ all the way to its normal form, i.e., it could be a full $\Lambda$-executer. To avoid this extreme, we define $\mathit{compile}$ to be {\em linear-bounded} if 
+$$
+\exists a, b\ .\ \forall M \ .\ |\mathit{compile}(M)| \leq a \cdot |M| + b
+$$
+for any \lexp\ $M$, given appropriate definitions of the 
+lengths of {\lexp}s and LLL-programs.
+\vair 
+
+
+
+\item An {\em optimiser} for LLL-programs) is a function $\mathit{opt} :  \mbox{LLL-programs} \to   \mbox{LLL-programs}$ that preserves semantics. This means: 
+$$\forall p \in \mbox{LLL-programs} \ .\ \lsem p\rsem = \lsem \mathit{opt} (p) \rsem
+$$
+
+
+\vair 
+
+
+\item  A 
+{\em specialiser}\footnote{
+In this definition we assume that program $p$  has exactly 2 inputs.
+A specialiser is aso called a {\em partial evaluator}, see \cite{JGS93}. }
+ for LLL-programs.  is a function 
+$$
+\mathit{opt}^1_1 :  \mbox{LLL-programs} \to    \mbox{LLL-data} \to   \mbox{LLL-programs}
+$$
+such that
+$$\forall p \in \mbox{LLL-programs} \ .\ 
+\forall s, d \in \mbox{LLL-data} \ .\ 
+\lsem p\rsem \ s\  d = \lsem \mathit{spec}\ p\ s \rsem\  d
+$$
+
+
+\vair 
+
+\item {\bf Theorem} There exists a linear-bounded compiler from {\lexp}s to LLL-programs.
+
+A construction to show it: partially evaluate the  normalisation algorithm   with respect to its  \lexp\ input $M$. Annotate as ``dynamic '' any transition of the normaliser that does not reduce the size of a syntactic argument.
+
+
+We have implemented this in practice by a prototype Haskell program. Proof that the construction is correct in general remains to be done.
+\vair 
+
+
+\item Some potentially big optimisations:
+\vair
+
+\begin{enumerate}
+\item Suppose the number of distinct back pointer values in all runs of an LLL-program $p$ is finite. 
+In this case, $p$ can be optimised by replacing the back pointers by {\em registers}. The effect would be to remove all unboundedly large data from  $p$.
+\vair
+
+\item Already-computed values can be stored, and not recomputed. Examples  include the ``factorial sum'' and the Fibonacci programs seen in  \cite{META14}.
+\vair
+
+\item Dead values need not be stored. An example is   the optimisation of ``naive reverse'', also seen in  \cite{META14}.
+\end{enumerate}
+\vair 
+
+\end{enumerate} 
+
+\bibliographystyle{plain}
+
+\bibliography{games}
+
+\nocite{*}
+
+\end{document}
