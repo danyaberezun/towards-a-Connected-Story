@@ -54,17 +54,17 @@ This is visible in the original work on full abstraction for PCF by Hyland, Ong,
 \cite{DBLP:journals/iandc/HylandO00,abramskyMcCusker97,DBLP:conf/tacs/AbramskyMJ94}\ldots. The potential operational consequences of the approach are  now becoming clearer, and look very promising. Further, game semantics may give a new line of attack on an old topic: {\em semantics-directed compiler generation}
 \cite{DBLP:conf/cc/1980,DBLP:conf/cc/Schmidt80}.
 
-The following follows in particular a recent paper \cite{ong} by  Ong on normalisation of the simply typed $\lambda$-calculus (henceforth called $\Lambda^{st}$). It is assumed that every free variable in the input is a constructor, with a given {\em arity}, i.e., number of arguments.
+The following follows in particular a recent paper \cite{ong2015} by  Ong on normalisation of the simply typed $\lambda$-calculus (henceforth called $\Lambda^{st}$). It is assumed that every free variable in the input is a constructor, with a given {\em arity}, i.e., number of arguments.
 
 Let a {\em token} be any subexpression of $M$, the lambda expression being evaluated.
 A {\em traversal} is a sequence of occurrences of 
 tokens\footnote{A token may occur more than once, or not at all in s traversal.}. 
 In addition, some of the tokens may have {\em back pointers} to earlier positions in the current traversal. 
 
-In game semantics papers \cite{ong}\ldots, the denotation of a PCF expression is  a game strategy. When played, 
+In game semantics papers \cite{ong2015}\ldots, the denotation of a PCF expression is  a game strategy. When played, 
 this game results in a traversal.
 
-The result of normalisation as in \cite{ong} contains only tokens and back pointers, and no other  $\lambda$-syntax.
+The result of normalisation as in \cite{ong2015} contains only tokens and back pointers, and no other  $\lambda$-syntax.
 
 
 
@@ -73,7 +73,7 @@ The result of normalisation as in \cite{ong} contains only tokens and back point
 
 
 The traversal algorithm is defined by structural induction on the syntax of long form $\lambda$-expressions
-(see {cite{ong} for a definition). 
+(see \cite{ong2015} for a definition). 
 A consequence: the algorithm can be {\em specialised} with respect to the sub-$\lambda$-expressions of 
 $M$.\footnote{Specialisation is also known as {\em partial evaluation}.}
 
