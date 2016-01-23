@@ -1,0 +1,180 @@
+\documentclass{article}
+
+
+
+
+% SIDE MARGINS:
+\oddsidemargin -10pt    %   Note that \oddsidemargin = \evensidemargin
+\evensidemargin -10pt
+\marginparwidth 20pt 
+\marginparsep 5pt       % Horizontal space between outer margin and 
+                        % marginal note
+% VERTICAL SPACING:        
+                         %Top of page:
+\topmargin -100pt           %    Nominal distance from top of page to top of
+                         %    box containing running head.
+% DIMENSION OF TEXT:
+\textheight 270mm        % Height of text (including footnotes and figures, 
+                         % excluding running head and foot).
+\textwidth 170mm         % Width of text line.
+
+\usepackage{amssymb,amsmath,latexsym,enumerate,hyperref,proof,ndj}
+
+
+
+
+\newcommand{\wkeval}{\Downarrow}
+
+\newcommand{\nfeval}{\stackrel{\tiny nf}{\Downarrow}}
+
+\newcommand{\expeval}{\stackrel{\tiny exp}{\Downarrow}}
+
+\newcommand{\diveeval}{\stackrel{\tiny dive}{\Downarrow}}
+
+\newcommand{\arity}[2]{\stackrel{\tt#1}{#2}}
+
+
+
+\title{Partial Evaluation and Normalisation by Traversals}
+ 
+\author {Joint work by Daniil 
+Berezun\footnote{JetBrains and St. Petersburg State University (Russia)} \ and Neil D. 
+Jones\footnote{DIKU, University of Copenhagen (Denmark)}}
+
+
+
+\begin{document}
+
+
+
+
+%\setcounter{tocdepth}{3} \tableofcontents  \newpage
+
+\setcounter{tocdepth}{3}
+%\setcounter{chapter}{0}
+
+\maketitle
+\vspace{-6mm}
+
+\paragraph{Game semantics re-examined.}
+
+A starting point: the game semantics for PCF can be thought of as a PCF interpreter. 
+In game semantics papers 
+\cite{
+abramskyMcCusker97,
+DBLP:conf/tacs/AbramskyMJ94,
+DBLP:journals/iandc/AbramskyO93,
+lmcs09,
+blumong2008,
+DBLP:journals/iandc/HylandO00,
+DBLP:journals/tcs/KerNO02,
+DBLP:conf/icfp/NeatherwayRO12,
+ong2015}
+the denotation of an expression is  a game strategy. When played, 
+the game results in a 
+traversal\footnote{  % FOOTNOTE
+Let a {\em token} be any subexpression of $M$, the lambda expression being evaluated.
+A {\em traversal} is a sequence of occurrences of  tokens. 
+Some tokens  have {\em back pointers} to earlier positions in the current traversal.  
+A token may occur more than once, or not at all in a traversal. 
+The size of the traversals: of the order of the length of the expression's head linear reduction sequence. 
+}.  % END OF FOOTNOTE
+Ong's recent paper \cite{ong2015} normalises a simply typed $\lambda$-expression using   traversals.
+
+A surprising consequence: it is possible to build a lambda calculus interpreter with {\bf none} of the traditional 
+implementation machinery: 
+$\beta$-reduction;   environments binding variables to values; and  ``closures'' and  ``thunks''  for  function calls and parameters.
+(This was implicitly  visible  in early work on full abstraction for PCF.)
+
+A new angle on game semantics: 
+It  looks very promising to study its operational consequences. 
+Further, this may give a new line of attack on an old topic: 
+{\em semantics-directed compiler generation}
+\cite{DBLP:conf/cc/1980,DBLP:conf/cc/Schmidt80}.
+
+
+
+
+\paragraph{An  idea: specialise a traversal-based normaliser.}
+
+
+
+Ong's  algorithm \cite{ong2015} is defined by structural recursion on the syntax of (the eta-long form of) a $\lambda$-expression $M$. 
+Consequence: the  algorithm can be {\em specialised} with respect to the sub-$\lambda$-expressions of 
+$M$. (Specialisation is also known as {\em partial evaluation}, see  \cite{JGS93}.)
+
+
+
+\paragraph{An intermediate step: a low-level semantic language {\sc lll}.}
+
+
+
+A partial evaluator, 
+given a program $p$ and the {\em static} portion $s$ of its input data, will precompute the parts of $p$'s computation  that depend only on $s$, and generate residual code for all other parts of $p$. 
+% given expression $M$ in $\Lambda^{st}$ or $\Lambda^{untyped}$, will precompute all parts of the traversal algorithm for $M$ that depend only on its syntax. 
+In the current context: specialisation is used to {\em factor} a given traversal algorithm
+$ \mathit{trav} : \Lambda \to \mathit{Traversals}$ into two stages:
+$$
+ \mathit{trav} = \mathit{travgen}\, ; \lsem\ \rsem^{LLL}  
+ \mbox{\ where\  }  
+       \mathit{travgen}:\Lambda \to \mbox{\sc lll} 
+ \mbox{\ and\ }
+ \lsem\ \rsem^{LLL}  : \mbox{\sc lll} \to \mathit{Traversals}
+$$
+The specialised traversal-builder is a residual output program in language {\sc lll}. The output program  contains  no lambda-syntax; only target code to construct the traversal. 
+
+
+\paragraph{Traversals for $\Lambda^{simplytyped}$.}
+\hfill
+
+
+We programmed Ong's  traversal algorithm  in both {\sc haskell} and {\sc scheme}. The {\sc haskell} version includes typing (Algorithm W, given user-defined types for free variables); conversion to eta-long form;  the traversal algorithm itself; and construction of the residual $\lambda$-expression.
+The {\sc scheme} version is (at the time of writing) nearly in form suitable for automatic specialisation. We will use  the system {\sc unmix}  (Sergei Romanenko).
+
+We have implemented an {\sc lll}-generator. Given an input $\lambda$-expression $M$, the generator produces as output an {\sc lll}  program $p_M$  that, when run, will yield the traversals of $M$. Symbolically:
+$\lsem M\rsem = \lsem \lsem p_M\rsem \rsem$. 
+
+
+A well-known fact:  the traversal of $M$ may be much larger than $M$. (By Statman's results it may be larger by a ``non-elementary'' amount!). It is possible, though, to construct $p_M$ so $|p_M| = O(|M|)$, i.e., $M$'s {\sc lll} equivalent has size that is only linearly larger than $M$
+ itself.
+
+For specialisation, all calls of the traversal algorithm to itself that do not progress from one $M$ subexpression  to a proper subexpression are annotated as ``dynamic''. 
+The motivation is  increased efficiency: no such recursive calls in the traversal-builder  will  be unfolded while producing the generator;
+but all other calls will be unfolded. 
+
+The current implementation regards {\sc lll} as a subset of {\sc scheme},
+so the output $p_M$ is currently produced in the form of a {\sc scheme}  program. 
+(This will soon be changed, replacing {\sc scheme} by a tiny subset of {\sc haskell}.)
+
+
+
+\paragraph{Traversals for $\Lambda^{untyped}$.}
+%\hfill
+
+
+A traversal algorithm for {\em untyped} $\lambda$-expressions $M$ has been implemented in {\sc haskell}. It is more complex than Ong's evaluator, using  four different kinds of back pointers. The net effect is that an arbitrary untyped $\lambda$-expression can be translated into {\sc lll}.
+A correctness proof is pending.
+
+ As with Ong's evaluator, this  algorithm is also defined by structural recursion on its input $\lambda$-expression's syntax.
+ Current work: apply partial evaluation to the  traversal algorithm for untyped $\lambda$-expressions.
+
+
+\paragraph{Next steps:} (a) More on languages, partial evaluation and implementation. (b) Find a way to separate programs from data. Regard a computation of $\lambda$-expression $M$ on input $d$ as a {\em game} between the {\sc lll}-codes for $M$ and $d$. (c) Study the utility of {\sc lll} as an intermediate language for a semantics-directed compiler generator.
+
+\newpage
+
+
+
+
+
+\bibliographystyle{plain}
+
+\bibliography{games}
+
+\nocite{*}
+
+
+
+
+
+\end{document}
