@@ -132,7 +132,7 @@ We programmed Ong's  traversal algorithm  in both {\sc haskell} and {\sc scheme}
 The {\sc scheme} version is (at the time of writing) nearly in form suitable for automatic specialisation. We will use  the system {\sc unmix}  (Sergei Romanenko).
 
 We have implemented an {\sc lll}-generator. Given an input $\lambda$-expression $M$, the generator produces as output an {\sc lll}  program $p_M$  that, when run, will yield the traversals of $M$. Symbolically:
-$\lsem M\rsem = \lsem \lsem p_M\rsem \rsem$. 
+$\lsem M\rsem = \lsem \lsem p_M\rsem^{LLL} \rsem$. 
 
 
 A well-known fact:  the traversal of $M$ may be much larger than $M$. (By Statman's results it may be larger by a ``non-elementary'' amount!). It is possible, though, to construct $p_M$ so $|p_M| = O(|M|)$, i.e., $M$'s {\sc lll} equivalent has size that is only linearly larger than $M$
@@ -140,11 +140,11 @@ A well-known fact:  the traversal of $M$ may be much larger than $M$. (By Statma
 
 For specialisation, all calls of the traversal algorithm to itself that do not progress from one $M$ subexpression  to a proper subexpression are annotated as ``dynamic''. 
 The motivation is  increased efficiency: no such recursive calls in the traversal-builder  will  be unfolded while producing the generator;
-but all other calls will be unfolded. 
+but {\em all other calls} will be unfolded. 
 
 The current implementation regards {\sc lll} as a subset of {\sc scheme},
 so the output $p_M$ is currently produced in the form of a {\sc scheme}  program. 
-(This will soon be changed, replacing {\sc scheme} by a tiny subset of {\sc haskell}.)
+(Soon to be changed: replace {\sc scheme} by a strict 1. order subset of {\sc haskell}.)
 
 
 

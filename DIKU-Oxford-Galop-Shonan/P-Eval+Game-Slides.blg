@@ -1,0 +1,48 @@
+This is BibTeX, Version 0.99d (TeX Live 2013)
+Capacity: max_strings=35307, hash_size=35307, hash_prime=30011
+The top-level auxiliary file: P-Eval+Game-Slides.aux
+The style file: unsrt.bst
+Database file #1: slidesgames.bib
+Warning--empty year in blumong2008
+You've used 7 entries,
+            1791 wiz_defined-function locations,
+            489 strings with 4516 characters,
+and the built_in function-call counts, 1253 in all, are:
+= -- 98
+> -- 55
+< -- 1
++ -- 21
+- -- 14
+* -- 67
+:= -- 206
+add.period$ -- 21
+call.type$ -- 7
+change.case$ -- 5
+chr.to.int$ -- 0
+cite$ -- 8
+duplicate$ -- 69
+empty$ -- 143
+format.name$ -- 14
+if$ -- 281
+int.to.chr$ -- 0
+int.to.str$ -- 7
+missing$ -- 7
+newline$ -- 37
+num.names$ -- 8
+pop$ -- 31
+preamble$ -- 1
+purify$ -- 0
+quote$ -- 0
+skip$ -- 23
+stack$ -- 0
+substring$ -- 25
+swap$ -- 12
+text.length$ -- 1
+text.prefix$ -- 0
+top$ -- 0
+type$ -- 0
+warning$ -- 1
+while$ -- 9
+width$ -- 8
+write$ -- 73
+(There was 1 warning)
